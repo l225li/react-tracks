@@ -22,7 +22,6 @@ class Query(graphene.ObjectType):
         return user
 
 
-
 class CreateUser(graphene.Mutation):
     user = graphene.Field(UserType)
 
