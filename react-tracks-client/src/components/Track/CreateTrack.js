@@ -1,4 +1,7 @@
 import React, { useState }from "react";
+import { Mutation } from 'react-apollo'
+import { gql } from 'apollo-boost'
+import axios from 'axios'
 import withStyles from "@material-ui/core/styles/withStyles";
 import Dialog from "@material-ui/core/Dialog";
 import DialogActions from "@material-ui/core/DialogActions";
@@ -14,15 +17,44 @@ import AddIcon from "@material-ui/icons/Add";
 import ClearIcon from "@material-ui/icons/Clear";
 import LibraryMusicIcon from "@material-ui/icons/LibraryMusic";
 
+import Error from "../Shared/Error"
+
+
 const CreateTrack = ({ classes }) => {
   const [open, setOpen] = useState(false)
   const [title, setTitle] = useState("")
   const [description, setDescription] = useState("")
   const [file, setFile] = useState("")
+  const [submitting, setSubmitting] = useState(false)
 
   const handleAudioChange = event => {
     const selectedFile = event.target.files[0]
     setFile(selectedFile)
+  }
+
+  const handleAudioUpload = async () => {
+    try {
+      const data = new FormData()
+      data.append('file', file)
+      data.append('resource_type', 'raw')
+      data.append('upload_preset', 'react-tracks')
+      data.append('cloud_name', 'l225li')
+      const res = await axios.post('https://api.cloudinary.com/v1_1/l225li/raw/upload', data)
+      return res.data.url
+    } catch (err) {
+      console.error('Error uploading file', err)
+      setSubmitting(false)
+    }
+
+  }
+
+  const handleSubmit = async (event, createTrack) => {
+    // to prevent the page from reloading 
+    event.preventDefault()
+    setSubmitting(true)
+    // upload our audio file, get returned url from API
+    const uploadedUrl = await handleAudioUpload()
+    createTrack({ variables: { title, description, url: uploadedUrl }})
   }
   return (
     <>
@@ -32,9 +64,20 @@ const CreateTrack = ({ classes }) => {
     </Button>
 
     {/* Create Track Dialog */}
+    <Mutation
+      mutation={CREATE_TRACK_MUTATION}
+      onCompleted={data => {
+        console.log({data})
+        setSubmitting(false)
+        setOpen(false)
+      }}
+    >
+      {(createTrack, { lodaring, error }) => {
 
-    <Dialog open={open} className={classes.dialog}>
-      <form>
+        if (error) return <Error error={error}/>
+        return (
+        <Dialog open={open} className={classes.dialog}>
+      <form onSubmit={event => handleSubmit(event, createTrack)}>
         <DialogTitle>Create Track</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -63,7 +106,7 @@ const CreateTrack = ({ classes }) => {
               id="audio"
               required
               type="file"
-              accept="audio/map,audio/wav"
+              accept="audio/mp3,audio/wav"
               className={classes.input}
               onChange={handleAudioChange}
             />
@@ -82,24 +125,48 @@ const CreateTrack = ({ classes }) => {
           </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)} className={classes.cancel}>
+          <Button disabled={submitting} onClick={() => setOpen(false)} className={classes.cancel}>
             Cancel
           </Button>
-          <Button disabled={
+          <Button
+          disabled={submitting ||
             !title.trim() || !description.trim() || !file
           }
-          type="submit" className={classes.save}>
-            Add Track
+          type="submit"
+          className={classes.save}
+          >
+            {submitting? (
+              <CircularProgress className={classes.save} size={24} />
+            ) : (
+              "Add Track"
+            )}
           </Button>
         </DialogActions>
       </form>
 
     </Dialog>
+          
+        )
+      }}
+    </Mutation>
     </>
 
   )
 };
 
+const CREATE_TRACK_MUTATION = gql`
+  mutation ($title: String!, $description: String!, $url: String!) {
+    createTrack(title: $title, description: $description, url: $url)
+    {
+      track {
+        id
+        title
+        description
+        url
+      }
+    }
+  }
+`
 const styles = theme => ({
   container: {
     display: "flex",
