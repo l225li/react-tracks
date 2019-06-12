@@ -17,13 +17,13 @@ import DeleteTrack from './DeleteTrack'
 import UpdateTrack from './UpdateTrack'
 
 
-const TrackList = ({ classes, tracks}) => (
+const TrackList = ({ classes, tracks }) => (
   <List>
     {tracks.map(track => (
       <ExpansionPanel key={track.id}>
         <ExpansionPanelSummary expandIcon={<ExpandMoreIcon />}>
           <ListItem className={classes.root}>
-            <LikeTrack />
+            <LikeTrack trackId={track.id} likeCount={track.likes.length} />
             <ListItemText
               primaryTypographyProps={{
                 variant: "subheading",
