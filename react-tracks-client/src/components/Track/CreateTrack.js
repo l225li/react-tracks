@@ -56,6 +56,13 @@ const CreateTrack = ({ classes }) => {
 
   }
 
+  const handleUpdateCache = (cache, { data: { createTrack }}) => {
+    // readQuery doesn't send request to the server
+    const data = cache.readQuery({ query: GET_TRACKS_QUERY })
+    const tracks = data.tracks.concat(createTrack.track)
+    cache.writeQuery({ query: GET_TRACKS_QUERY, data: { tracks } })
+  }
+
   const handleSubmit = async (event, createTrack) => {
     // to prevent the page from reloading 
     event.preventDefault()
@@ -82,7 +89,7 @@ const CreateTrack = ({ classes }) => {
         setDescription("")
         setFile("")
       }}
-      refetchQueries={() => [{ query: GET_TRACKS_QUERY }]}
+      update={handleUpdateCache}
     >
       {(createTrack, { lodaring, error }) => {
 
@@ -174,10 +181,16 @@ const CREATE_TRACK_MUTATION = gql`
     createTrack(title: $title, description: $description, url: $url)
     {
       track {
-        id
-        title
+        id        title
         description
         url
+        likes {
+          id 
+        }
+        postedBy {
+          id
+          username
+        }
       }
     }
   }
