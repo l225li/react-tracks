@@ -49,13 +49,5 @@ export const ME_QUERY = gql`
       }
     }
 `
-// const GET_TRACKS_QUERY = gql`
-//   {
-//     tracks {
-//       id
-//       title
-//     }
-//   }
-// `
 
 export default withRoot(Root);
