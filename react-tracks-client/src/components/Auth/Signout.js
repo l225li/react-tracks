@@ -8,7 +8,7 @@ import Button from "@material-ui/core/Button";
 const Signout = ({ classes }) => {
   const handleSignout = client => {
     localStorage.removeItem('authToken')
-    client.writeData({ data: {isLoggedId: false }})
+    client.writeData({ data: {isLoggedIn: false }})
     console.log('Signed out user', client)
   }
 
